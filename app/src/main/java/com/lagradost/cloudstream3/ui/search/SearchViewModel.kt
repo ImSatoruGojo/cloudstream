@@ -169,22 +169,28 @@ class SearchViewModel : ViewModel() {
         )
     }
 
+    private fun sanitizeTitleKey(title: String): String {
+        return title.lowercase()
+            .replace(Regex("[^a-z0-9]"), "")
+    }
+
     private fun bundleSearch(lists: MutableMap<String, ExpandableSearchList>): ExpandableSearchList {
         if (lists.size == 1) {
-            return lists.values.first()
+            val singleList = lists.values.first().list
+            val deduplicated = singleList.distinctBy { sanitizeTitleKey(it.name) }
+            return ExpandableSearchList(deduplicated, 1, false)
         }
 
-        val list = ArrayList<SearchResponse>()
-        val nestedList =
-            lists.map { it.value.list }
+        val rawList = ArrayList<SearchResponse>()
+        val nestedList = lists.map { it.value.list }
 
-        // I do it this way to move the relevant search results to the top
+        // Interleave search results from different providers
         var index = 0
         while (true) {
             var added = 0
             for (sublist in nestedList) {
                 if (sublist.size > index) {
-                    list.add(sublist[index])
+                    rawList.add(sublist[index])
                     added++
                 }
             }
@@ -192,7 +198,10 @@ class SearchViewModel : ViewModel() {
             index++
         }
 
-        return ExpandableSearchList(list, 1, false)
+        // Deduplicate results by normalized title so only 1 result per title is shown
+        val deduplicatedList = rawList.distinctBy { sanitizeTitleKey(it.name) }
+
+        return ExpandableSearchList(deduplicatedList, 1, false)
     }
 
     private fun search(
