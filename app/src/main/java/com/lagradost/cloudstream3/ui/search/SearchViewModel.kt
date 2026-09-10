@@ -170,8 +170,8 @@ class SearchViewModel : ViewModel() {
     }
 
     private fun sanitizeTitleKey(title: String): String {
-        return title.lowercase()
-            .replace(Regex("[^a-z0-9]"), "")
+        val sanitized = title.lowercase().replace(Regex("[^\\p{L}\\p{N}]"), "")
+        return if (sanitized.isBlank()) title.lowercase().trim() else sanitized
     }
 
     private fun bundleSearch(lists: MutableMap<String, ExpandableSearchList>): ExpandableSearchList {
