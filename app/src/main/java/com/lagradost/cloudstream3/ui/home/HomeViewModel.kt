@@ -396,7 +396,28 @@ class HomeViewModel : ViewModel() {
                     } else {
                         _preview.postValue(Resource.Success((previewResponsesAdded.size < currentShuffledList.size) to previewResponses))
                     }
-                    _page.postValue(Resource.Success(expandable))
+
+                    val categoryOrder = listOf(
+                        "anime", "popular anime", "anime popular",
+                        "tv show", "tv shows", "popular tv show", "popular tv shows", "tv", "series",
+                        "cartoon", "cartoons", "popular cartoon", "popular cartoons",
+                        "movie", "movies", "popular movie", "popular movies"
+                    )
+
+                    fun getCategoryRank(name: String): Int {
+                        val lower = name.lowercase()
+                        categoryOrder.forEachIndexed { idx, cat ->
+                            if (lower.contains(cat)) return idx
+                        }
+                        return 1000
+                    }
+
+                    val orderedExpandable = expandable.entries
+                        .sortedWith(compareBy({ getCategoryRank(it.key) }, { it.key }))
+                        .associate { it.key to it.value }
+                        .toMutableMap()
+
+                    _page.postValue(Resource.Success(orderedExpandable))
                 } catch (e: Exception) {
                     _randomItems.postValue(emptyList())
                     logError(e)
